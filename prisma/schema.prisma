@@ -1,0 +1,103 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model fail_reason {
+  fail_idx      Int    @id @default(autoincrement())
+  fail_contents String    @db.VarChar(4000)
+  reg_date      DateTime? @db.Timestamp(6)
+  reg_mem_idx   DateTime  @db.Timestamp(6)
+  task          task[]
+}
+
+model file_info {
+  file_idx       Int    @id @default(autoincrement())
+  file_name      String    @db.VarChar(4000)
+  prj_idx        Int
+  file_save_name String    @db.VarChar(4000)
+  file_ext       String    @db.VarChar(50)
+  file_size      Int
+  reg_date       DateTime? @db.Timestamp(6)
+  reg_mem_idx    Int
+  project        project   @relation(fields: [prj_idx], references: [prj_idx])
+}
+
+model member {
+  mem_idx          Int             @id @default(autoincrement())
+  mem_id           String             @unique @db.VarChar(10)
+  mem_pwd          String             @db.VarChar(400)
+  mem_name         String             @db.VarChar(50)
+  mem_email        String             @db.VarChar(50)
+  mem_birth        DateTime?          @db.Date
+  mem_affil        String?            @db.VarChar(400)
+  mem_profile      String?            @db.VarChar(4000)
+  reg_date         DateTime?          @db.Timestamp(6)
+  upt_date         DateTime?          @db.Timestamp(6)
+  project_assign   project_assign[]
+  project_bookmark project_bookmark[]
+}
+
+model project {
+  prj_idx          Int             @id @default(autoincrement())
+  prj_title        String             @unique @db.VarChar(4000)
+  prj_sub_title    String             @db.VarChar(4000)
+  prj_contents     String
+  prj_start        DateTime           @db.Date
+  prj_end          DateTime?          @default(dbgenerated("to_date('99991231'::text, 'YYYYMMDD'::text)")) @db.Date
+  useyn            Boolean            @default(true)
+  reg_date         DateTime?          @default(now()) @db.Timestamp(6)
+  reg_mem_idx      Int
+  upt_date         DateTime?          @db.Timestamp(6)
+  upt_mem_idx      Int?
+  file_info        file_info[]
+  project_assign   project_assign[]
+  project_bookmark project_bookmark[]
+  task             task[]
+}
+
+model project_assign {
+  prj_idx     Int
+  mem_idx     Int
+  reg_date    DateTime? @db.Timestamp(6)
+  reg_mem_idx Int
+  readeryn    Boolean   @default(false)
+  member      member    @relation(fields: [mem_idx], references: [mem_idx])
+  project     project   @relation(fields: [prj_idx], references: [prj_idx])
+
+  @@unique([prj_idx, mem_idx], name: "project_assign_un")
+}
+
+model project_bookmark {
+  prj_idx Int
+  mem_idx Int
+  member  member  @relation(fields: [mem_idx], references: [mem_idx])
+  project project @relation(fields: [prj_idx], references: [prj_idx])
+
+  @@unique([prj_idx, mem_idx], name: "project_bookmark_un")
+}
+
+model task {
+  task_idx       Int       @id @default(autoincrement())
+  task_title     String       @db.VarChar(400)
+  task_memo      String?
+  task_start     DateTime     @db.Timestamp(6)
+  task_end       DateTime?    @db.Timestamp(6)
+  upper_task_idx Int?
+  reg_date       DateTime?    @db.Timestamp(6)
+  reg_mem_idx    Int
+  upt_date       DateTime?    @db.Timestamp(6)
+  upt_mem_idx    Int?
+  task_important String?      @db.Char(1)
+  task_state     String?      @db.Char(2)
+  fail_idx       Int?
+  prj_idx        Int
+  fail_reason    fail_reason? @relation(fields: [fail_idx], references: [fail_idx])
+  project        project      @relation(fields: [prj_idx], references: [prj_idx])
+  task           task?        @relation("taskTotask_upper_task_idx", fields: [upper_task_idx], references: [task_idx])
+  other_task     task[]       @relation("taskTotask_upper_task_idx")
+}
