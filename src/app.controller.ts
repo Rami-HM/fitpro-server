@@ -38,13 +38,13 @@ export class AppController {
 
   }
 
-  @Public() 
+  @Public()
   @Post('login')
   getLoginInfo(@Body() body: MemberLoginDTO): Promise<member> {
     const memberInfo = this.memberService.findOne(body);
     return memberInfo;
   }
-  
+
   @Get('checkToken')
   checkToken(@Req() request: Request): Promise<member> {
     const token = request.headers.authorization;
@@ -52,4 +52,10 @@ export class AppController {
   }
 
 
+  @Public()
+  @Get('hihi')
+  memberList() : Promise<object[]> {
+    const result = this.memberService.list();
+    return result;
+  }
 }
