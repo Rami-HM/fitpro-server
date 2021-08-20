@@ -37,11 +37,18 @@ export class AppService {
       const result = await this.cloudinary.uploadImage(files[0]).catch(() => {
         throw new exception();
       });
+
+      // "http://res.cloudinary.com/hd4m2sihx/image/upload/v1629422859/mvntizmfafjjn4g0k2h3.png"
+      // /v1629422859/mvntizmfafjjn4g0k2h3.png
+
+
+      const imageUrl = await ''.concat("/v",result.version,"/",result.public_id);
+
       return {
         status: 200,
         message: '파일 업로드를 성공하였습니다.',
         data: {
-          files: result.url,
+          files: imageUrl,
         },
       };
     } catch (error) {

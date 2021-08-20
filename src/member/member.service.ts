@@ -16,20 +16,23 @@ export class MemberService {
 
         try {
 
-            const memberInfo = await this.prisma.member.findFirst({
-                // where: { AND : [{mem_id: body.mem_id}, {mem_pwd: body.mem_pwd}] },
-                where: { mem_id: body.mem_id },
-                select: {
-                    mem_id: true,
-                    mem_name: true,
-                    mem_affil: true,
-                    mem_email: true,
-                    mem_birth: true,
-                    mem_profile: true,
-                    mem_idx: true,
-                    mem_pwd: true,
-                }
-            });
+            const memberList = await this.prisma.$queryRaw(
+                `select
+                    MEM_IDX,
+                    MEM_ID,
+                    MEM_NAME,
+                    MEM_EMAIL,
+                    TO_CHAR(MEM_BIRTH,'YYYY-MM-DD') AS MEM_BIRTH,
+                    MEM_AFFIL,
+                    MEM_PROFILE ,
+                    MEM_NAME as NAME,
+                    CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as SRC,
+                    MEM_PWD
+                from  MEMBER
+                WHERE MEM_ID = '${body.mem_id}'`
+            );
+
+            const memberInfo = memberList[0];
 
             if (!memberInfo) {
                 throw new HttpException('일치하는 정보가 없습니다.', HttpStatus.NO_CONTENT);
@@ -41,11 +44,6 @@ export class MemberService {
             }
 
             delete memberInfo.mem_pwd;
-
-            if (memberInfo.mem_birth) {
-                const formatDate = getFormatDate(memberInfo.mem_birth);
-                memberInfo.mem_birth = formatDate as any;
-            }
 
             const payload = { idx: memberInfo.mem_idx, id: memberInfo.mem_id };
             const token = this.jwtService.sign(payload);// token 반환
@@ -94,27 +92,24 @@ export class MemberService {
     async getMemberInfo(mem_idx: number): Promise<object> {
 
         try {
-            let memberInfo = await this.prisma.member.findUnique({
-                where: { mem_idx: mem_idx },
-                select: {
-                    mem_id: true,
-                    mem_name: true,
-                    mem_affil: true,
-                    mem_email: true,
-                    mem_birth: true,
-                    mem_profile: true,
-                    mem_idx: true,
-                }
-            });
+            const memberInfo = await this.prisma.$queryRaw(
+                `select
+                    MEM_IDX,
+                    MEM_ID,
+                    MEM_NAME,
+                    MEM_EMAIL,
+                    TO_CHAR(MEM_BIRTH,'YYYY-MM-DD') AS MEM_BIRTH,
+                    MEM_AFFIL,
+                    MEM_PROFILE ,
+                    MEM_NAME as NAME,
+                    CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as SRC
+                from  MEMBER
+                WHERE MEM_IDX = ${mem_idx}`
+            );
 
-            if (memberInfo.mem_birth) {
-                const bir = memberInfo.mem_birth;
-                const formatDate = getFormatDate(bir);
-                memberInfo.mem_birth = formatDate as any;
-            }
-
-            return memberInfo;
+            return memberInfo[0];
         } catch (error) {
+            console.log(error);
             throw new HttpException("정보를 찾을 수 없습니다.", HttpStatus.FORBIDDEN);
         }
 
@@ -162,11 +157,11 @@ export class MemberService {
                 MEM_ID,
                 MEM_NAME,
                 MEM_EMAIL,
-                MEM_BIRTH,
+                TO_CHAR(MEM_BIRTH,'YYYY/MM/DD') as MEM_BIRTH,
                 MEM_AFFIL,
                 MEM_PROFILE ,
                 MEM_NAME as NAME,
-                CONCAT('${process.env.SERVER_DOMAIN}',MEM_PROFILE) as SRC
+                CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as SRC
             from  MEMBER`
         );
         return resultQuery;

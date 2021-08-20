@@ -10,7 +10,6 @@ export class UserController {
     @Public()
     @Post('login')
     getLoginInfo(@Body() body : User): Promise<any> {
-    console.log(this.userService.findOne(body));
       return this.userService.findOne(body);
     }
 

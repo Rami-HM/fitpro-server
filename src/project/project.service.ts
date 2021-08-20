@@ -115,7 +115,7 @@ export class ProjectService {
                         MEM_PROFILE ,
                         MEM_NAME as NAME,
                         READERYN,
-                        CONCAT('${process.env.SERVER_DOMAIN}',MEM_PROFILE) as SRC
+                        CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as SRC
                     from
                         PROJECT TB1
                     left join PROJECT_ASSIGN as TB2 on
@@ -128,8 +128,6 @@ export class ProjectService {
                         TB1.PRJ_IDX = ${prj_idx}
                     order by READERYN desc`
             );
-
-            console.log(resultQuery);
             return await resultQuery;
 
         } catch (error) {
@@ -178,7 +176,7 @@ export class ProjectService {
                     MEM_PROFILE ,
                     MEM_NAME as NAME,
                     READERYN,
-                    CONCAT('${process.env.SERVER_DOMAIN}',MEM_PROFILE) as SRC
+                    CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as SRC
                 from
                     PROJECT TB1
                 left join PROJECT_ASSIGN as TB2 on

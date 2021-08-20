@@ -60,7 +60,6 @@ export class TaskService {
     async subRegister(body: SubTaskCreateDTO): Promise<any> {
         try {
 
-            console.log(body);
             let failData: fail_reason = {
                 fail_idx: body.fail_idx === '' ? null : +body.fail_idx,
                 fail_contents: body.fail_contents,
@@ -69,7 +68,6 @@ export class TaskService {
             };
             //미처리 사유가 등록 되었을 경우( 작성 )
             if (body.fail_idx === 'add') {
-                console.log("??????????")
                 failData = await this.registerFailReason({
                     fail_contents: body.fail_contents,
                     reg_mem_idx: body.reg_mem_idx

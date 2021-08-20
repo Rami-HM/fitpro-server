@@ -21,7 +21,6 @@ export class TaskController {
 
     @Get('list/:prj_idx')
     getTaskList(@Param('prj_idx',ParseIntPipe) prj_idx: number): Promise<any> {
-        console.log("?")
         const result = this.taskService.list(prj_idx);
         return result;
     }
