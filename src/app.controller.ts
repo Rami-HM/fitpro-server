@@ -28,14 +28,15 @@ export class AppController {
 
   @Public()
   @Post('api/upload')
-  @UseInterceptors(FilesInterceptor('file', null, multerOptions))
+  //@UseInterceptors(FilesInterceptor('file', null, multerOptions))
   // FilesInterceptor 첫번째 매개변수: formData의 key값,
   // 두번째 매개변수: 파일 최대 갯수
   // 세번째 매개변수: 파일 설정 (위에서 작성했던 multer 옵션들)
+  @UseInterceptors(FilesInterceptor('file'))
   uploadFile(@UploadedFiles() files: Array<Express.Multer.File>) {
-    const confiles = this.appService.uploadFiles(files); //주소를 디비에 저장해서 불러오자!
+    //const confiles = this.appService.uploadFiles(files); //주소를 디비에 저장해서 불러오자!
+    const confiles = this.appService.uploadCloudinary(files); //주소를 디비에 저장해서 불러오자!
     return confiles;
-
   }
 
   @Public()

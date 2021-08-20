@@ -16,6 +16,10 @@ import { ProjectService } from './project/project.service';
 import { ProjectController } from './project/project.controller';
 import { TaskController } from './task/task.controller';
 import { TaskService } from './task/task.service';
+import { FailController } from './fail/fail.controller';
+import { FailService } from './fail/fail.service';
+import { CloudinaryService } from './cloudinary/cloudinary.service';
+import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 
 @Module({
   imports: [ PrismaModule, 
@@ -29,7 +33,8 @@ import { TaskService } from './task/task.service';
     UserController,
     MemberController,
     ProjectController,
-    TaskController
+    TaskController,
+    FailController
   ],
   providers: [
     PrismaService,
@@ -37,8 +42,10 @@ import { TaskService } from './task/task.service';
     UserService,
     MemberService,
     ProjectService,
-    TaskService
-
+    TaskService,
+    FailService,
+    CloudinaryService,
+    CloudinaryProvider,
     /*UserPgService,GroupPgService*/
   ],
 })

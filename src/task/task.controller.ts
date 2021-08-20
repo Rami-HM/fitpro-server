@@ -1,4 +1,5 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post } from '@nestjs/common';
+import { SubTaskCreateDTO } from 'src/dto/subTask-create.dto';
 import { TaskCreateDTO } from 'src/dto/task-create.dto';
 import { TaskService } from './task.service';
 
@@ -7,8 +8,21 @@ export class TaskController {
     constructor(private readonly taskService: TaskService) { }
 
     @Post('insert')
-    insertMember(@Body() body: TaskCreateDTO): Promise<any> {
+    insertMainTask(@Body() body: TaskCreateDTO): Promise<any> {
         const result = this.taskService.register(body);
+        return result;
+    }
+
+    @Post('sub/insert')
+    insertSubTask(@Body() body: SubTaskCreateDTO): Promise<any> {
+        const result = this.taskService.subRegister(body);
+        return result;
+    }
+
+    @Get('list/:prj_idx')
+    getTaskList(@Param('prj_idx',ParseIntPipe) prj_idx: number): Promise<any> {
+        console.log("?")
+        const result = this.taskService.list(prj_idx);
         return result;
     }
 }

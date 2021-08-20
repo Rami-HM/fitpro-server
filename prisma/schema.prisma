@@ -10,9 +10,8 @@ datasource db {
 model fail_reason {
   fail_idx      Int    @id @default(autoincrement())
   fail_contents String    @db.VarChar(4000)
-  reg_date      DateTime? @db.Timestamp(6)
-  reg_mem_idx   DateTime  @db.Timestamp(6)
-  task          task[]
+  reg_date      DateTime? @default(now()) @db.Timestamp(6)
+  reg_mem_idx   Int
 }
 
 model file_info {
@@ -82,22 +81,21 @@ model project_bookmark {
 }
 
 model task {
-  task_idx       Int       @id @default(autoincrement())
-  task_title     String       @db.VarChar(400)
+  task_idx       Int    @id @default(autoincrement())
+  task_title     String    @db.VarChar(400)
   task_memo      String?
-  task_start     DateTime     @db.Timestamp(6)
-  task_end       DateTime?    @db.Timestamp(6)
+  task_start     DateTime  @db.Timestamp(6)
+  task_end       DateTime? @db.Timestamp(6)
   upper_task_idx Int?
-  reg_date       DateTime?    @db.Timestamp(6)
+  reg_date       DateTime? @db.Timestamp(6)
   reg_mem_idx    Int
-  upt_date       DateTime?    @db.Timestamp(6)
+  upt_date       DateTime? @db.Timestamp(6)
   upt_mem_idx    Int?
-  task_important String?      @db.Char(1)
-  task_state     String?      @db.Char(2)
+  task_important String?   @db.Char(1)
+  task_state     String?   @db.Char(2)
   fail_idx       Int?
   prj_idx        Int
-  fail_reason    fail_reason? @relation(fields: [fail_idx], references: [fail_idx])
-  project        project      @relation(fields: [prj_idx], references: [prj_idx])
-  task           task?        @relation("taskTotask_upper_task_idx", fields: [upper_task_idx], references: [task_idx])
-  other_task     task[]       @relation("taskTotask_upper_task_idx")
+  project        project   @relation(fields: [prj_idx], references: [prj_idx])
+  task           task?     @relation("taskTotask_upper_task_idx", fields: [upper_task_idx], references: [task_idx])
+  other_task     task[]    @relation("taskTotask_upper_task_idx")
 }
