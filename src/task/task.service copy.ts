@@ -1,4 +1,3 @@
-import { TaskUpdateDTO } from './../dto/task-update.dto';
 import { HttpException, HttpStatus, Injectable } from '@nestjs/common';
 import { fail_reason, Prisma, task } from '@prisma/client';
 import { SubTaskCreateDTO } from '../dto/subTask-create.dto';
@@ -8,33 +7,28 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class TaskService {
-    constructor(private readonly prisma: PrismaService) {
-        prisma.$on<any>('query', (event: Prisma.QueryEvent) => {
-            console.log('Query: ' + event.query);
-            console.log('Duration: ' + event.duration + 'ms');
-        });
-    }
+    constructor(private readonly prisma: PrismaService) { }
 
     selectQueryCommon = ` T.task_idx,
                     T.task_title,
                     T.task_memo,
-                    CONCAT(to_char(T.task_start, 'YYYY-MM-DD'),'T',to_char(T.task_start, 'HH24:MI')) as task_start,
-                    CONCAT(to_char(T.task_end, 'YYYY-MM-DD'),'T',to_char(T.task_end, 'HH24:MI')) as task_end,
+                    T.CONCAT(to_char(T.task_start, 'YYYY-MM-DD'),'T',to_char(T.task_start, 'HH24:MI')) as task_start,
+                    T.CONCAT(to_char(T.task_end, 'YYYY-MM-DD'),'T',to_char(T.task_end, 'HH24:MI')) as task_end,
                     T.upper_task_idx,
                     T.reg_date,
                     T.reg_mem_idx,
                     T.upt_date,
                     T.upt_mem_idx,
                     T.task_important,
-                    T.task_state,
+                    T.task_state
                     T.fail_idx,
                     T.prj_idx`;
 
-    selectQueryDescDate = ` 
+    selectQueryDescDate = `
         to_char(T.task_start, 'YYYY-MM-DD HH24:MI:SS') as task_start_desc, 
         to_char(T.task_end, 'YYYY-MM-DD HH24:MI:SS') as task_end_desc`;
 
-    selectQueryDescInfo = ` 
+    selectQueryDescInfo = `
         (case
             (T.task_important) 
             when 'O' then '매우높음'
@@ -127,7 +121,7 @@ export class TaskService {
                 task_start: new Date(body.task_start + ":00.000Z"),
                 task_end: new Date(body.task_end + ":00.000Z"),
                 fail_idx: failData.fail_idx,
-                upper_task_idx: +body.upper_task_idx
+                upper_task_idx: body.upper_task_idx
             }
             const result = await this.prisma.task.create({ data });
             return ({
@@ -146,10 +140,19 @@ export class TaskService {
         try {
 
             const result = await this.prisma.$queryRaw(
-                `select`
-                + this.selectQueryCommon + `,` + this.selectQueryDescDate +
-                `,(case
-                    (case coalesce(T.task_important,'') when '' then B.task_important else T.task_important end)
+                `select
+                    task_idx,
+                    task_title,
+                    task_memo,
+                    to_char(task_start, 'YYYY-MM-DD HH24:MI:SS') as task_start,
+                    to_char(task_end, 'YYYY-MM-DD HH24:MI:SS') as task_end,
+                    T.upper_task_idx,
+                    reg_date,
+                    reg_mem_idx,
+                    upt_date,
+                    upt_mem_idx,
+                    (case
+                        coalesce(T.task_important,B.task_important) 
                         when 'O' then '매우높음'
                         when 'A' then '높음'
                         when 'B' then '중간'
@@ -163,6 +166,8 @@ export class TaskService {
                         when 'CP' then '완료됨'
                         when 'FL' then '미처리'
                     end) as task_state,
+                    fail_idx,
+                    prj_idx,
                     (select mem_name from member where mem_idx = T.reg_mem_idx) as worker
                 from
                     task T 
@@ -181,7 +186,7 @@ export class TaskService {
                     prj_idx = ${prj_idx}
                 order by task_end, 
                     (case
-                        (case coalesce(T.task_important,'') when '' then B.task_important else T.task_important end)
+                        coalesce(T.task_important,B.task_important) 
                         when 'O' then 0
                         when 'A' then 1
                         when 'B' then 2
@@ -203,12 +208,40 @@ export class TaskService {
     async detail(task_idx: number): Promise<any> {
         try {
             const result = await this.prisma.$queryRaw(
-                `select`
-                + this.selectQueryCommon + `,` + this.selectQueryDescDate + `,` + this.selectQueryDescInfo +
-                `,p.prj_title,
-                    fail_contents,
-                    mem_name as worker,
+                `select
+                    task_idx,
+                    task_title,
+                    task_memo,
+                    CONCAT(to_char(task_start, 'YYYY-MM-DD'),'T',to_char(task_start, 'HH24:MI')) as task_start,
+                    CONCAT(to_char(task_end, 'YYYY-MM-DD'),'T',to_char(task_end, 'HH24:MI')) as task_end,
+                    upper_task_idx,
+                    t.reg_date,
+                    t.reg_mem_idx,
+                    t.upt_date,
+                    t.upt_mem_idx,
+                    task_important,
+                    (case
+                        coalesce(task_important) 
+                        when 'O' then '매우높음'
+                        when 'A' then '높음'
+                        when 'B' then '중간'
+                        when 'C' then '낮음'
+                    end) as task_important_desc,
+                    task_state,
+                    (case
+                        task_state 
+                        when 'SH' then '예정됨'
+                        when 'PG' then '진행중'
+                        when 'PD' then '보류'
+                        when 'CP' then '완료됨'
+                        when 'FL' then '미처리'
+                    end) as task_state_desc,
+                    t.fail_idx,
                     CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as worker_SRC,
+                    mem_name as worker,
+                    fail_contents,
+                    t.prj_idx,
+                    p.prj_title,
                     (select task_title from task where task_idx = t.upper_task_idx) as main_task
                 from
                     task T left join member m
@@ -240,9 +273,37 @@ export class TaskService {
             const result = await this.prisma.$queryRaw(
                 `select
                     task_idx as id,
-                `
-                + this.selectQueryCommon + `,` + this.selectQueryDescDate + `,` + this.selectQueryDescInfo +
-                `,p.prj_title,
+                    task_idx,
+                    task_title,
+                    task_memo,
+                    CONCAT(to_char(task_start, 'YYYY-MM-DD'),'T',to_char(task_start, 'HH24:MI')) as task_start,
+                    CONCAT(to_char(task_end, 'YYYY-MM-DD'),'T',to_char(task_end, 'HH24:MI')) as task_end,
+                    upper_task_idx,
+                    t.reg_date,
+                    t.reg_mem_idx,
+                    t.upt_date,
+                    t.upt_mem_idx,
+                    task_important,
+                    (case
+                        coalesce(task_important) 
+                        when 'O' then '매우높음'
+                        when 'A' then '높음'
+                        when 'B' then '중간'
+                        when 'C' then '낮음'
+                    end) as task_important_desc,
+                    task_state,
+                    (case
+                        task_state 
+                        when 'SH' then '예정됨'
+                        when 'PG' then '진행중'
+                        when 'PD' then '보류'
+                        when 'CP' then '완료됨'
+                        when 'FL' then '미처리'
+                    end) as task_state_desc,
+                    task_state as task_state_code,
+                    fail_idx,
+                    t.prj_idx,
+                    p.prj_title,
                     (select task_title from task where task_idx = t.upper_task_idx) as main_task
                 from
                     task T
@@ -349,9 +410,35 @@ export class TaskService {
     async mainTaskList(prj_idx: number): Promise<any> {
         try {
             const result = await this.prisma.$queryRaw(
-                `select`
-                + this.selectQueryCommon + `,` + this.selectQueryDescDate + `,` + this.selectQueryDescInfo +
-                `
+                `select
+                    task_idx,
+                    task_title,
+                    task_memo,
+                    CONCAT(to_char(task_start, 'YYYY-MM-DD'),'T',to_char(task_start, 'HH24:MI')) as task_start,
+                    CONCAT(to_char(task_end, 'YYYY-MM-DD'),'T',to_char(task_end, 'HH24:MI')) as task_end,
+                    upper_task_idx,
+                    t.reg_date,
+                    t.reg_mem_idx,
+                    t.upt_date,
+                    t.upt_mem_idx,
+                    task_important,
+                    (case
+                        coalesce(task_important) 
+                        when 'O' then '매우높음'
+                        when 'A' then '높음'
+                        when 'B' then '중간'
+                        when 'C' then '낮음'
+                    end) as task_important_desc,
+                    task_state,
+                    (case
+                        task_state 
+                        when 'SH' then '예정됨'
+                        when 'PG' then '진행중'
+                        when 'PD' then '보류'
+                        when 'CP' then '완료됨'
+                        when 'FL' then '미처리'
+                    end) as task_state_desc,
+                    t.prj_idx
                 from
                     task T 
                 where
@@ -371,18 +458,48 @@ export class TaskService {
         }
     }
 
-    async subTasklist(upper_task_idx: number): Promise<any> {
+    async subTasklist(prj_idx: number, upper_task_idx: number): Promise<any> {
         try {
 
             const result = await this.prisma.$queryRaw(
-                `select`
-                + this.selectQueryCommon + `,` + this.selectQueryDescDate + `,` + this.selectQueryDescInfo +
-                `,M.mem_name as worker,
+                `select
+                    task_idx,
+                    task_title,
+                    task_memo,
+                    to_char(task_start, 'YYYY-MM-DD HH24:MI:SS') as task_start,
+                    to_char(task_end, 'YYYY-MM-DD HH24:MI:SS') as task_end,
+                    T.upper_task_idx,
+                    reg_date,
+                    reg_mem_idx,
+                    upt_date,
+                    upt_mem_idx,
+                    task_important,
+                    (case
+                        (task_important) 
+                        when 'O' then '매우높음'
+                        when 'A' then '높음'
+                        when 'B' then '중간'
+                        when 'C' then '낮음'
+                    end) as task_important_desc,
+                    task_state
+                    (case
+                        task_state 
+                        when 'SH' then '예정됨'
+                        when 'PG' then '진행중'
+                        when 'PD' then '보류'
+                        when 'CP' then '완료됨'
+                        when 'FL' then '미처리'
+                    end) as task_state_desc,
+                    fail_idx,
+                    prj_idx,
+                    M.mem_name as worker,
                     CONCAT('${process.env.CDN_URL}',MEM_PROFILE) as worker_SRC
                 from
                     task T LEFT JOIN MEMBER M
                     ON T.reg_mem_idx = M.mem_idx
-                where UPPER_TASK_IDX = ${upper_task_idx}
+                where
+                    prj_idx = ${prj_idx}
+                AND UPPER_TASK_IDX = ${upper_task_idx}
                 order by task_end, 
                     (case
                         (task_important)
@@ -402,40 +519,6 @@ export class TaskService {
         } catch (error) {
             console.log(error);
             throw new HttpException(error['response'] ? error['response'] : "리스트를 불러오는데 실패했습니다.", HttpStatus.BAD_REQUEST);
-        }
-    }
-
-    async modifyMainTask(task_idx: number, body: TaskUpdateDTO): Promise<any> {
-        try {
-            
-            //mainTask
-            let data = await {
-                task_title: body.task_title,
-                task_memo: body.task_memo,
-                task_start: new Date(body.task_start + ":00.000Z"),
-                task_end: new Date(body.task_end + ":00.000Z"),
-                reg_mem_idx: body.reg_mem_idx,
-                task_important: null,
-                task_state: null,
-                project: { connect: { prj_idx: body.prj_idx } },
-            }
-
-            const result = await this.prisma.task.update({
-                where: { task_idx: task_idx },
-                data
-            })
-
-            const detailTask = await this.detail(task_idx);
-
-            return ({
-                status: 201,
-                message: '수정되었습니다.',
-                data: detailTask.data
-            });
-
-        } catch (error) {
-            console.log(error);
-            throw new HttpException(error['response'] ? error['response'] : "수정하는데 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
     }
 }

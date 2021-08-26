@@ -48,7 +48,7 @@ export class ProjectService {
             return ({
                 status: 200,
                 message: '프로젝트가 만들어졌어요!',
-                data: result
+                data: {...result, readeridx : result.reg_mem_idx}
             });
 
         } catch (error) {
@@ -217,14 +217,14 @@ export class ProjectService {
             })
 
             return ({
-                status: 200,
+                status: 201,
                 message: '수정되었습니다.',
                 data: body['assignProjectMemberList']
             });
 
         } catch (error) {
             console.log(error);
-            throw new HttpException(error['response'] ? error['response'] : "실패했습니다.", HttpStatus.BAD_REQUEST);
+            throw new HttpException(error['response'] ? error['response'] : "프로젝트를 수정 하는데 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
 
         return null;
@@ -251,14 +251,14 @@ export class ProjectService {
             const resultDetail = await this.detail(prj_idx, body.upt_mem_idx);
 
             return ({
-                status: 200,
+                status: 201,
                 message: '수정되었습니다.',
                 data: resultDetail
             });
 
         } catch (error) {
             console.log(error);
-            throw new HttpException(error['response'] ? error['response'] : "실패했습니다.", HttpStatus.BAD_REQUEST);
+            throw new HttpException(error['response'] ? error['response'] : "프로젝트를 수정 하는데 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
 
         return null;
@@ -285,13 +285,13 @@ export class ProjectService {
             }
 
             return ({
-                status: 200,
+                status: 201,
                 message: '수정되었습니다.',
             });
 
         } catch (error) {
             console.log(error);
-            throw new HttpException(error['response'] ? error['response'] : "실패했습니다.", HttpStatus.BAD_REQUEST);
+            throw new HttpException(error['response'] ? error['response'] : "프로젝트를 즐겨찾기 하는데 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
 
         return null;
@@ -310,7 +310,7 @@ export class ProjectService {
             });
         } catch (error) {
             console.log(error);
-            throw new HttpException(error['response'] ? error['response'] : "실패했습니다.", HttpStatus.BAD_REQUEST);
+            throw new HttpException(error['response'] ? error['response'] : "프로젝트를 삭제 하는데 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
 
     }
