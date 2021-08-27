@@ -30,11 +30,11 @@ export class StatsService {
                     PRJ_IDX = ${prj_idx}) TBL2
                 on TBL1.prj_idx = tbl2.prj_idx
                 where TBL1.PRJ_IDX = ${prj_idx}`);
-                return ({
-                    status: 200,
-                    message: '프로젝트 의 전체 할일의 개수 통계가 생성 됬어요!',
-                    data: result[0]
-                });
+            return ({
+                status: 200,
+                message: '프로젝트 의 전체 할일의 개수 통계가 생성 됬어요!',
+                data: result[0]
+            });
         } catch (error) {
             console.log(error);
             throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
@@ -43,7 +43,6 @@ export class StatsService {
     async total(prj_idx: number, query): Promise<any> {
         try {
             const { mem_idx } = query;
-            console.log(mem_idx);
             const result = await this.prisma.$queryRaw(
                 `WITH STATE_DESC AS(
                     SELECT 'SH' AS TASK_STATE, '예정됨' AS TASK_STATE_DESC
@@ -67,7 +66,7 @@ export class StatsService {
                     FROM	
                     (SELECT * FROM
                         TASK WHERE UPPER_TASK_IDX IS NOT NULL
-                        ` + (mem_idx ? (` AND REG_MEM_IDX = ${mem_idx}`) : ``)+ `
+                        ` + (mem_idx ? (` AND REG_MEM_IDX = ${mem_idx}`) : ``) + `
                     ) T
                     GROUP BY
                         T.PRJ_IDX,
@@ -91,6 +90,45 @@ export class StatsService {
             return ({
                 status: 200,
                 message: '프로젝트 의 전체 할일의 개수 통계가 생성 됬어요!',
+                data: result
+            });
+
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async assignStats(prj_idx: number): Promise<any> {
+        try {
+            const result = await this.prisma.$queryRaw(
+                `select 
+                    pa.mem_idx, m.mem_name,
+                    CONCAT('${process.env.CDN_URL}',m.mem_profile) as mem_profile,
+                    coalesce(comple_cnt,0) as comple_cnt,coalesce(total_cnt,0) as total_cnt
+                from project_assign pa
+                left join (
+                    select 
+                        reg_mem_idx,
+                        sum(case task_state when 'CP' then cnt else 0 end) as comple_cnt,
+                        sum(cnt) as total_cnt
+                    from(
+                        select reg_mem_idx, task_state, count(task_state) as cnt
+                        from (
+                            select * from task where prj_idx = ${prj_idx} and task_state is not null
+                            )t 
+                        group by (reg_mem_idx, task_state)
+                    )tb
+                    group by reg_mem_idx
+                ) as tbl1
+                on pa.mem_idx = tbl1.reg_mem_idx
+                left join member m
+                on pa.mem_idx = m.mem_idx
+                where pa.prj_idx = ${prj_idx}`);
+
+            return ({
+                status: 200,
+                message: '프로젝트 의 통계가 생성 됬어요!',
                 data: result
             });
 

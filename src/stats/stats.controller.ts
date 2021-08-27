@@ -16,4 +16,10 @@ export class StatsController {
         const result = this.statsService.totalTasknum(prj_idx);
         return result;
     }
+
+    @Get('assign/:prj_idx')
+    assignTaskStats(@Param('prj_idx',ParseIntPipe) prj_idx:number): Promise<any> {
+        const result = this.statsService.assignStats(prj_idx);
+        return result;
+    }
 }

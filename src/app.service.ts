@@ -6,7 +6,6 @@ import { MemberService } from './member/member.service';
 
 import toStream = require('buffer-to-stream');
 import { CloudinaryService } from './cloudinary/cloudinary.service';
-import { exception } from 'console';
 
 @Injectable()
 export class AppService {
@@ -35,7 +34,7 @@ export class AppService {
   public async uploadCloudinary(files: Array<Express.Multer.File>) {
     try {
       const result = await this.cloudinary.uploadImage(files[0]).catch(() => {
-        throw new exception();
+        throw new HttpException('',HttpStatus.CONFLICT);
       });
 
       // "http://res.cloudinary.com/hd4m2sihx/image/upload/v1629422859/mvntizmfafjjn4g0k2h3.png"
