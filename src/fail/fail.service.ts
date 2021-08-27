@@ -7,7 +7,9 @@ export class FailService {
 
     async getFailReason(): Promise<any> {
         try {
-            const result = await this.prisma.fail_reason.findMany({});
+            const result = await this.prisma.fail_reason.findMany({
+                orderBy:{reg_date:'desc'}
+            });
             
             return ({
                 status: 200,

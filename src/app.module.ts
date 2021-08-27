@@ -20,6 +20,8 @@ import { FailController } from './fail/fail.controller';
 import { FailService } from './fail/fail.service';
 import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
+import { StatsService } from './stats/stats.service';
+import { StatsController } from './stats/stats.controller';
 
 @Module({
   imports: [ PrismaModule, 
@@ -34,7 +36,8 @@ import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
     MemberController,
     ProjectController,
     TaskController,
-    FailController
+    FailController,
+    StatsController
   ],
   providers: [
     PrismaService,
@@ -46,6 +49,7 @@ import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
     FailService,
     CloudinaryService,
     CloudinaryProvider,
+    StatsService,
     /*UserPgService,GroupPgService*/
   ],
 })

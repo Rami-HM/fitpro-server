@@ -84,10 +84,11 @@ export class TaskService {
             }
 
             const result = await this.prisma.task.create({ data });
+            const detailTask = await this.detail(result.task_idx);
             return ({
                 status: 201,
                 message: '할 일이 생성 됬어요!',
-                data: result
+                data: detailTask.data
             });
 
         } catch (error) {
@@ -130,10 +131,13 @@ export class TaskService {
                 upper_task_idx: +body.upper_task_idx
             }
             const result = await this.prisma.task.create({ data });
+
+            const detailTask = await this.detail(result.task_idx);
+
             return ({
                 status: 201,
                 message: '할 일이 생성 됬어요!',
-                data: result
+                data: detailTask.data
             });
 
         } catch (error) {
@@ -407,7 +411,7 @@ export class TaskService {
 
     async modifyMainTask(task_idx: number, body: TaskUpdateDTO): Promise<any> {
         try {
-            
+
             //mainTask
             let data = await {
                 task_title: body.task_title,
