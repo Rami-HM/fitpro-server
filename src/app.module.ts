@@ -22,6 +22,10 @@ import { CloudinaryService } from './cloudinary/cloudinary.service';
 import { CloudinaryProvider } from './cloudinary/cloudinary.provider';
 import { StatsService } from './stats/stats.service';
 import { StatsController } from './stats/stats.controller';
+import { CalendarService } from './calendar/calendar.service';
+import { CalendarController } from './calendar/calendar.controller';
+import { GanttService } from './gantt/gantt.service';
+import { GanttController } from './gantt/gantt.controller';
 
 @Module({
   imports: [ PrismaModule, 
@@ -37,7 +41,9 @@ import { StatsController } from './stats/stats.controller';
     ProjectController,
     TaskController,
     FailController,
-    StatsController
+    StatsController,
+    CalendarController,
+    GanttController
   ],
   providers: [
     PrismaService,
@@ -50,6 +56,8 @@ import { StatsController } from './stats/stats.controller';
     CloudinaryService,
     CloudinaryProvider,
     StatsService,
+    CalendarService,
+    GanttService,
     /*UserPgService,GroupPgService*/
   ],
 })

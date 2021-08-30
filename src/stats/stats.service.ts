@@ -137,4 +137,123 @@ export class StatsService {
             throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
         }
     }
+
+    async failStats(prj_idx: number): Promise<any> {
+        try {
+            const result = await this.prisma.$queryRaw(
+                `SELECT 
+                    FR.FAIL_IDX, FAIL_CONTENTS, COALESCE(CNT,0) AS CNT 
+                FROM FAIL_REASON FR
+                LEFT JOIN (
+                    SELECT 
+                        FAIL_IDX, COUNT(FAIL_IDX) AS CNT  
+                    FROM(
+                        SELECT * 
+                        FROM TASK 
+                        WHERE FAIL_IDX IS NOT NULL 
+                        AND PRJ_IDX = ${prj_idx}
+                    )TB 
+                    GROUP BY FAIL_IDX
+                ) TBL1
+                ON FR.FAIL_IDX  = TBL1.FAIL_IDX`);
+
+            return ({
+                status: 200,
+                message: '프로젝트 의 통계가 생성 됬어요!',
+                data: result
+            });
+
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async mainCntStats(prj_idx: number): Promise<any> {
+        try {
+            const result = await this.prisma.$queryRaw(
+                `SELECT T.TASK_IDX, TASK_TITLE, TASK_MEMO, 
+                COALESCE(CNT,0) as total_cnt, COALESCE(comple_cnt,0) as comple_cnt
+                FROM TASK T 
+                RIGHT JOIN (
+                    SELECT UPPER_TASK_IDX, COUNT(UPPER_TASK_IDX) AS CNT
+                    FROM (
+                        SELECT * 
+                        FROM TASK 
+                        WHERE PRJ_IDX = ${prj_idx} AND UPPER_TASK_IDX IS NOT NULL
+                    ) T GROUP BY UPPER_TASK_IDX
+                ) TBL1
+                ON T.TASK_IDX = TBL1.UPPER_TASK_IDX
+                LEFT JOIN (
+                SELECT UPPER_TASK_IDX, count(UPPER_TASK_IDX) as comple_cnt
+                FROM (
+                       SELECT * 
+                        FROM TASK 
+                        WHERE PRJ_IDX = ${prj_idx} AND UPPER_TASK_IDX IS NOT null and TASK_STATE = 'CP'
+                    )TB
+                    group by UPPER_TASK_IDX, task_state
+                )TBL2
+                on tbl1.upper_task_idx = tbl2.upper_task_idx`
+            );
+
+            return ({
+                status: 200,
+                message: '프로젝트 의 통계가 생성 됬어요!',
+                data: result
+            });
+
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
+
+    async recentTaskStats(prj_idx: number): Promise<any> {
+        try {
+            const result = await this.prisma.$queryRaw(
+                `SELECT * FROM(
+                    SELECT TASK_IDX, TASK_TITLE, TASK_MEMO, 
+                        CONCAT(TO_CHAR(T.TASK_START, 'YYYY-MM-DD'),'T',TO_CHAR(T.TASK_START, 'HH24:MI')) AS TASK_START,
+                        CONCAT(TO_CHAR(T.TASK_END, 'YYYY-MM-DD'),'T',TO_CHAR(T.TASK_END, 'HH24:MI')) AS TASK_END,
+                        (SELECT TASK_TITLE FROM TASK WHERE TASK_IDX = T.UPPER_TASK_IDX) AS MAIN_TASK,
+                        (CASE
+                            (T.TASK_IMPORTANT) 
+                            WHEN 'O' THEN '매우높음'
+                            WHEN 'A' THEN '높음'
+                            WHEN 'B' THEN '중간'
+                            WHEN 'C' THEN '낮음'
+                        END) AS TASK_IMPORTANT_DESC,
+                        MEM_IDX,
+                        MEM_NAME,
+                        CONCAT('${process.env.CDN_URL}',M.MEM_PROFILE) AS MEM_PROFILE,
+                        TO_CHAR(T.TASK_START, 'YYYY-MM-DD HH24:MI:SS') AS TASK_START_DESC, 
+                        TO_CHAR(T.TASK_END, 'YYYY-MM-DD HH24:MI:SS') AS TASK_END_DESC,
+                        TASK_STATE,
+                        (CASE
+                            (T.TASK_STATE)
+                            WHEN 'SH' THEN '예정됨'
+                            WHEN 'PG' THEN '진행중'
+                            WHEN 'PD' THEN '보류'
+                            WHEN 'CP' THEN '완료됨'
+                            WHEN 'FL' THEN '미처리'
+                        END) AS TASK_STATE_DESC
+                    FROM TASK T LEFT JOIN MEMBER M
+                    ON T.REG_MEM_IDX = M.MEM_IDX
+                    WHERE PRJ_IDX = ${prj_idx}
+                    AND TASK_STATE IN ('SH','PG')
+                    ORDER BY (TASK_END - NOW())) TBL
+                LIMIT 3`
+            );
+
+            return ({
+                status: 200,
+                message: '프로젝트 의 통계가 생성 됬어요!',
+                data: result
+            });
+
+        } catch (error) {
+            console.log(error);
+            throw new HttpException(error['response'] ? error['response'] : "통계 도출에 실패했습니다.", HttpStatus.BAD_REQUEST);
+        }
+    }
 }

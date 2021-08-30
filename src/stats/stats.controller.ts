@@ -22,4 +22,22 @@ export class StatsController {
         const result = this.statsService.assignStats(prj_idx);
         return result;
     }
+    
+    @Get('fail/:prj_idx')
+    failReasonStats(@Param('prj_idx',ParseIntPipe) prj_idx:number): Promise<any> {
+        const result = this.statsService.failStats(prj_idx);
+        return result;
+    }
+
+    @Get('main/:prj_idx')
+    mainCntStats(@Param('prj_idx',ParseIntPipe) prj_idx:number): Promise<any> {
+        const result = this.statsService.mainCntStats(prj_idx);
+        return result;
+    }
+
+    @Get('recent/:prj_idx')
+    recentTaskStats(@Param('prj_idx',ParseIntPipe) prj_idx:number): Promise<any> {
+        const result = this.statsService.recentTaskStats(prj_idx);
+        return result;
+    }
 }
