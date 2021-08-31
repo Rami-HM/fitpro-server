@@ -19,22 +19,22 @@ export class GanttService {
                 AS
                 (
                     SELECT 
-                         CONCAT('P',PRJ_IDX) AS IDX, NULL AS UPPER_IDX, PRJ_IDX , 
-                         NULL AS TASK_IDX, PRJ_TITLE AS TITLE, PRJ_START AS SDATE, PRJ_START, PRJ_END AS EDATE, 
-                         CONCAT('P',ROWNUM) AS PATH,  null::text as important
+                        CONCAT('P',PRJ_IDX) AS IDX, NULL AS UPPER_IDX, PRJ_IDX , 
+                        NULL AS TASK_IDX, PRJ_TITLE AS TITLE, to_char(PRJ_START, 'YYYY-MM-DD HH24:MI:SS') AS SDATE, PRJ_START, to_char(PRJ_END , 'YYYY-MM-DD HH24:MI:SS') AS EDATE, 
+                        CONCAT('P',ROWNUM) AS path, null::text as important
                     FROM (SELECT (ROW_NUMBER() OVER(ORDER BY PRJ_START)) AS ROWNUM, P.* FROM PROJECT P) TBL1 
                     UNION
                     SELECT 
                         TASK_IDX::TEXT AS IDX, CONCAT('P',TASK.PRJ_IDX) AS UPPER_IDX, TBL2.PRJ_IDX, 
-                        TASK_IDX ,TASK_TITLE AS TITLE , TASK_START AS SDATE, NULL AS PRJ_START , TASK_END AS EDATE,
-                        CONCAT('P',ROWNUM,'>',TASK_IDX) AS PATH,  null::text as important
+                        TASK_IDX ,TASK_TITLE AS TITLE ,to_char(TASK_START , 'YYYY-MM-DD HH24:MI:SS') AS SDATE, NULL AS PRJ_START ,to_char(TASK_END , 'YYYY-MM-DD HH24:MI:SS') AS EDATE,
+                        CONCAT('P',ROWNUM,'>',TASK_IDX) AS path, null::text as important
                     FROM TASK LEFT JOIN (SELECT (ROW_NUMBER() OVER(ORDER BY PRJ_START)) AS ROWNUM, PRJ_IDX FROM PROJECT P) TBL2 ON TASK.PRJ_IDX = TBL2.PRJ_IDX
                     WHERE UPPER_TASK_IDX IS NULL
                     UNION
                     SELECT 
                         T.TASK_IDX::TEXT AS IDX, T.UPPER_TASK_IDX::TEXT AS UPPER_IDX,  T.PRJ_IDX,
-                        T.TASK_IDX  ,T.TASK_TITLE AS TITLE , T.TASK_START AS SDATE, NULL AS PRJ_START ,T.TASK_END AS EDATE,
-                        TR.PATH || '>' || T.TASK_IDX AS PATH, T.task_important as important
+                        T.TASK_IDX  ,T.TASK_TITLE AS TITLE , to_char(T.TASK_START , 'YYYY-MM-DD HH24:MI:SS') AS SDATE, NULL AS PRJ_START ,to_char(T.TASK_END , 'YYYY-MM-DD HH24:MI:SS') AS EDATE,
+                        TR.PATH || '>' || T.TASK_IDX AS path, T.task_important as important
                     FROM TASKTREE TR
                     LEFT JOIN TASK T ON TR.TASK_IDX = T.UPPER_TASK_IDX
                 )SELECT 
@@ -43,14 +43,16 @@ export class GanttService {
                 TTr.path,
                 title,
                 TITLE as name,
-                UPPER_IDX,
-                to_char(sdate,'YYYY-MM-DD HH24:MI') as sDate,
-                to_char(edate,'YYYY-MM-DD HH24:MI') as eDate,
+                UPPER_IDX, sDate, eDate,
                 round(
                     ((extract(day from EDATE::timestamp -SDATE::timestamp)*24*60) + 
                     (extract(hour from EDATE::timestamp -SDATE::timestamp)*60) + 
                     (extract(minutes from EDATE::timestamp -SDATE::timestamp)))::numeric,3)::int8 as duration,
                 'minute' as durationUnit,
+                CONCAT(round(
+                    ((extract(day from EDATE::timestamp -SDATE::timestamp)*24*60) + 
+                    (extract(hour from EDATE::timestamp -SDATE::timestamp)*60) + 
+                    (extract(minutes from EDATE::timestamp -SDATE::timestamp)))::numeric,3)::int8,'minute') as duration_desc,
                 important,
                 (case
 		            (important) 
@@ -68,13 +70,10 @@ export class GanttService {
             
             // console.log(newResult);
              
-        
-            const newResult = result.map(item=>({...item, sdate:new Date(item.sdate)}))
-
             return ({
                 status: 200,
                 message: 'gant task List',
-                data: newResult
+                data: result
             });
 
         } catch (error) {
