@@ -41,13 +41,13 @@ export class AuthGuard implements CanActivate {
         case 'INVALID_TOKEN':
         case 'TOKEN_IS_ARRAY':
         case 'NO_USER':
-          throw new HttpException('유효하지 않은 토큰입니다.',HttpStatus.FORBIDDEN);
+          throw new HttpException('유효하지 않은 토큰입니다.',HttpStatus.UNAUTHORIZED);
 
         case 'jwt expired':
-          throw new HttpException('토큰이 만료되었습니다.',HttpStatus.FORBIDDEN);
+          throw new HttpException('토큰이 만료되었습니다.',HttpStatus.UNAUTHORIZED);
         
         default:
-          throw new HttpException('서버 오류입니다.',HttpStatus.FORBIDDEN);
+          throw new HttpException('서버 오류입니다.',HttpStatus.UNAUTHORIZED);
       }
     }
   };
