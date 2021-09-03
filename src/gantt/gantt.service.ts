@@ -44,6 +44,8 @@ export class GanttService {
                 title,
                 TITLE as name,
                 UPPER_IDX, sDate, eDate,
+                extract(epoch from EDATE::timestamp) as edateT,
+                extract(epoch from SDATE::timestamp) as sdateT,
                 round(
                     ((extract(day from EDATE::timestamp -SDATE::timestamp)*24*60) + 
                     (extract(hour from EDATE::timestamp -SDATE::timestamp)*60) + 
